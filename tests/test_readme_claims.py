@@ -34,12 +34,17 @@ def _readme() -> str:
     return _read(README_PATH)
 
 
+def _mcp_server_source() -> str:
+    """Concatenate mcp_server package sources without importing chromadb."""
+    pkg = MEMPALACE_PKG / "mcp_server"
+    return "\n".join(_read(path) for path in sorted(pkg.glob("*.py")))
+
+
 def _tools_dict_keys() -> list:
     """Return the list of tool names registered in the TOOLS dict."""
     # Import the module-level TOOLS dict.  We can't just import mcp_server
     # because it calls chromadb on import, so we parse the source instead.
-    src = _read(MEMPALACE_PKG / "mcp_server.py")
-    return re.findall(r'"(mempalace_\w+)":\s*\{', src)
+    return re.findall(r'"(mempalace_\w+)":\s*\{', _mcp_server_source())
 
 
 def _doc_tool_names() -> list:
@@ -597,13 +602,13 @@ class TestBackendAbstraction:
         """Claim: pluggable backends.
         backends/base.py must define an abstract base class."""
         path = MEMPALACE_PKG / "backends" / "base.py"
-        assert (
-            path.is_file()
-        ), "mempalace/backends/base.py does not exist. Backend abstraction layer is missing."
+        assert path.is_file(), (
+            "mempalace/backends/base.py does not exist. Backend abstraction layer is missing."
+        )
         src = _read(path)
-        assert (
-            "ABC" in src or "abstractmethod" in src
-        ), "backends/base.py does not define an abstract base class."
+        assert "ABC" in src or "abstractmethod" in src, (
+            "backends/base.py does not define an abstract base class."
+        )
 
     def test_backends_chroma_exists(self):
         """Claim: ChromaDB backend implementation.
@@ -611,9 +616,9 @@ class TestBackendAbstraction:
         path = MEMPALACE_PKG / "backends" / "chroma.py"
         assert path.is_file(), "mempalace/backends/chroma.py does not exist."
         src = _read(path)
-        assert (
-            "BaseCollection" in src or "base" in src
-        ), "backends/chroma.py does not reference the base class."
+        assert "BaseCollection" in src or "base" in src, (
+            "backends/chroma.py does not reference the base class."
+        )
 
     def test_backends_importable(self):
         """Both backend modules should be importable."""
@@ -650,9 +655,9 @@ class TestI18n:
     def test_english_baseline_exists(self):
         """en.json must exist as the baseline language file."""
         path = MEMPALACE_PKG / "i18n" / "en.json"
-        assert (
-            path.is_file()
-        ), "mempalace/i18n/en.json does not exist. English baseline is required."
+        assert path.is_file(), (
+            "mempalace/i18n/en.json does not exist. English baseline is required."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -737,9 +742,9 @@ class TestReadmeToolCountConsistency:
         counts = re.findall(r"(\d+)\s+tools", readme)
         if len(counts) > 1:
             unique = set(counts)
-            assert (
-                len(unique) == 1
-            ), f"README mentions different tool counts: {counts}. All occurrences must agree."
+            assert len(unique) == 1, (
+                f"README mentions different tool counts: {counts}. All occurrences must agree."
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -752,7 +757,7 @@ class TestAAAKSpecToolHandler:
 
     def test_aaak_spec_handler_exists(self):
         """The handler function for get_aaak_spec must be defined."""
-        src = _read(MEMPALACE_PKG / "mcp_server.py")
+        src = _mcp_server_source()
         tools = _tools_dict_keys()
         if "mempalace_get_aaak_spec" in tools:
             assert "def tool_get_aaak_spec(" in src, (
